@@ -10,10 +10,8 @@
   ((command-handers
     :type list
     :initarg :command-handlers
-    :documentation "Alist of parsers, one for each command name")
-   )
-  "Parser for CMakeLists.txt files"
-)
+    :documentation "Alist of parsers, one for each command name"))
+  "Parser for CMakeLists.txt files")
 
 (defmethod parse-buffer ((this cmake-lists-parser) buf)
   "Parse BUF and call the command handlers for each command encountered"
@@ -30,4 +28,3 @@
       (insert-file-contents file nil nil nil t)
       (parse-buffer this current-buffer))))
 
-  

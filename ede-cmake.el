@@ -5,16 +5,13 @@
 (require 'ede-cpp-project)
 ;;(require 'cmake-lists-parser)
 (require 'ede-cmake-build-tool)
-;(require 'ede-base)
+                                        ;(require 'ede-base)
 
 (defclass ede-cmake-cpp-target (ede-cpp-target ede-target)
-  (
-   (parent :initarg :parent)
+  ((parent :initarg :parent)
    (keybindings :allocation :class
                 :initform (("F" . cmake-project-compile-buffer-file)
-                           (("D" . ede-debug-target))))
-   )
-)
+                           (("D" . ede-debug-target))))))
 
 (defclass ede-cmake-cpp-project (ede-cpp-project ede-project)
   ((locate-build-directory
@@ -36,7 +33,9 @@ configuration, and target specific elements such as build
 variables.")
    (configuration-default
     :initarg :configuration-default
-    ; no default, will be selected from first valid build directory
+                                        ; no default, will be selected
+                                        ; from first valid build
+                                        ; directory
     :initform "None"
     :custom string
     :label "Current Configuration"
@@ -76,24 +75,21 @@ It should return the fully qualified file name passed in from NAME.  If that fil
 exist, it should return nil.")
 
    (menu :initform
-	 (
-          [ "Set Configuration Build Directory..." cmake-project-configuration-build-directory-set ]
-	  [ "Configure CMake Build Directory" cmake-configure-current-build-directory ]
-          )
-         :documentation "Menu items for this project")
-   )
+         ([ "Set Configuration Build Directory..." cmake-project-configuration-build-directory-set ]
+          [ "Configure CMake Build Directory" cmake-configure-current-build-directory ])
+         :documentation "Menu items for this project"))
   "EDE CMake C/C++ project.")
 
 (defun cmake-build-directory-valid-p (dir)
   "Returns DIR if a valid build directory, nil otherwise. Also resolves symlinks."
-    (if (and dir (file-exists-p dir) (file-directory-p dir))
-        (if (file-symlink-p dir)
-            (file-truename dir)
-          dir)
-      nil))
+  (if (and dir (file-exists-p dir) (file-directory-p dir))
+      (if (file-symlink-p dir)
+          (file-truename dir)
+        dir)
+    nil))
 
 (defmethod initialize-instance ((this ede-cmake-cpp-project)
-				&rest fields)
+                                &rest fields)
   (call-next-method)
 
   ;; Default name of the project to the name of the directory the project is found in
@@ -119,8 +115,7 @@ exist, it should return nil.")
                                           (when d
                                             (if (file-name-absolute-p d) d
                                               (concat (file-name-as-directory dir-root) d))))))
-                    (oref this configurations)))
-      ))
+                    (oref this configurations)))))
 
   (if (slot-boundp this 'build-directory)
       (oset this configuration-default "None")
@@ -131,23 +126,19 @@ exist, it should return nil.")
       (if (cmake-build-directory-valid-p (cdr config-default-build))
           ;; Yes, just use it:
           (oset this configuration-default (car config-default-build))
-        
+
         ;; No, set the first configuration that has a valid build directory
         (let ((first-valid-config-build-dir (car (delq nil (mapcar (lambda (c) (if (cmake-build-directory-valid-p (cdr c)) c nil))
-                                                                    (oref this configuration-build-directories))))))
+                                                                   (oref this configuration-build-directories))))))
           (if first-valid-config-build-dir
               (oset this configuration-default (car first-valid-config-build-dir))
-            
+
             ;; Fallback of last resort - use the project root, but only if it has been used as a
             ;; build directory before (ie it has a "CMakeFiles" directory)
             (let ((cmakefiles (concat (file-name-as-directory (oref this directory)) "CMakeFiles")))
               (when (and (file-exists-p cmakefiles) (file-directory-p cmakefiles))
                 (oset this configuration-build-directories (list (cons "None" (oref this directory))))
-                (oset this configuration-default "None")
-                ))
-            ))
-        ))
-    )
+                (oset this configuration-default "None"))))))))
 
   ;; Set up the build tool
   (unless (slot-boundp this 'build-tool)
@@ -155,11 +146,9 @@ exist, it should return nil.")
     ;; do this, but is there a way to get the information out of CMake?
     (oset this build-tool (if (eq system-type 'windows-nt)
                               (cmake-visual-studio-build-tool "Visual Studio")
-                            (cmake-make-build-tool "GNU Make Tool")))
-  )
-)
+                            (cmake-make-build-tool "GNU Make Tool")))))
 
-  
+
 (defmethod ede-menu-items-build ((this ede-cmake-cpp-project) &optional current)
   "Override to add a custom target menu item"
   (append (call-next-method)
@@ -185,7 +174,7 @@ the current configuration in the current project"
       (error (format "not a valid build directory: %s" directory)))
     (if (consp conf)
         (setcdr conf builddir)
-      (add-to-list (oref this configuration-build-directories) 
+      (add-to-list (oref this configuration-build-directories)
                    (cons (oref this configuration-default) builddir)))
     (slot-makeunbound this 'build-directory)))
 
@@ -194,8 +183,7 @@ the current configuration in the current project"
 a valid config against the configurations slot"
   (unless (assoc newconfig (oref this configurations))
     (error (format "configuration %s not valid for this project" newconfig)))
-  (oset this default-configuration newconfig)
-)
+  (oset this default-configuration newconfig))
 
 (defun cmake-project-build-custom-target (target)
   "Prompt for a custom target and build it in the current project"
@@ -206,10 +194,9 @@ a valid config against the configurations slot"
   "Find an EDE target in PROJ for BUFFER.
 If one doesn't exist, create a new one for this directory."
   (let* ((targets (oref proj targets))
-	 (dirname (directory-file-name (file-name-directory (buffer-file-name buffer))))
+         (dirname (directory-file-name (file-name-directory (buffer-file-name buffer))))
          (path (file-relative-name dirname (oref proj directory)))
-	 (ans (object-assoc path :path targets))
-	 )
+         (ans (object-assoc path :path targets)))
     (when (not ans)
       (setq ans (ede-cmake-cpp-target
                  path
@@ -224,28 +211,26 @@ If one doesn't exist, create a new one for this directory."
     ans))
 
 (defmethod cmake-build-directory ((this ede-cmake-cpp-project))
- "Returns the current build directory. Raises an error if the build directory is not valid"
- ;; if the current build-directory is set, we always use it
- (if (slot-boundp this 'build-directory)
-     (oref this build-directory)
-   (let* ((config (assoc (oref this configuration-default) (oref this configuration-build-directories)))
-          (validdir (and (consp config) (cmake-build-directory-valid-p (cdr config)))))
-     ;; if the configuration build directory is valid, we use it
-     (unless validdir
-       (error "No valid build directory found"))
-     validdir
-   )))
+  "Returns the current build directory. Raises an error if the build directory is not valid"
+  ;; if the current build-directory is set, we always use it
+  (if (slot-boundp this 'build-directory)
+      (oref this build-directory)
+    (let* ((config (assoc (oref this configuration-default) (oref this configuration-build-directories)))
+           (validdir (and (consp config) (cmake-build-directory-valid-p (cdr config)))))
+      ;; if the configuration build directory is valid, we use it
+      (unless validdir
+        (error "No valid build directory found"))
+      validdir)))
 
 (defmethod cmake-configure-build-directory ((this ede-cmake-cpp-project))
   "Set up build directory for configuration type CONFIG, or configuration-default if not set"
-    (let* ((config (oref this configuration-default))
-           (default-directory (file-name-as-directory (cmake-build-directory this)))
-           (generator (oref (oref this build-tool) generator-string))
-           (define-build-type (if (string= config "None") ""
-                                (concat "-DCMAKE_BUILD_TYPE=" config)))
-           (cmake-command (format "cmake -G \"%s\" %s %s " generator define-build-type (oref this directory) )))
-      (compile cmake-command)
-    ))
+  (let* ((config (oref this configuration-default))
+         (default-directory (file-name-as-directory (cmake-build-directory this)))
+         (generator (oref (oref this build-tool) generator-string))
+         (define-build-type (if (string= config "None") ""
+                              (concat "-DCMAKE_BUILD_TYPE=" config)))
+         (cmake-command (format "cmake -G \"%s\" %s %s " generator define-build-type (oref this directory) )))
+    (compile cmake-command)))
 
 (defun cmake-configure-current-build-directory ()
   "Configure the build directory for the current build type"
@@ -256,12 +241,11 @@ If one doesn't exist, create a new one for this directory."
   (let* ((build-dir (cmake-build-directory this))
          (target-arg (if target-name (concat " --target " target-name) ""))
          (additional-args (if (slot-boundp (oref this build-tool) 'additional-parameters)
-                             (concat " -- " (oref (oref this build-tool) additional-parameters) "")))
+                              (concat " -- " (oref (oref this build-tool) additional-parameters) "")))
          (cmake-command (concat "cmake --build " build-dir target-arg
-                               " --config " (oref this configuration-default)
-                               additional-args)))
-    (compile cmake-command)
-    ))
+                                " --config " (oref this configuration-default)
+                                additional-args)))
+    (compile cmake-command)))
 
 (defmethod project-compile-project ((this ede-cmake-cpp-project))
   "Compile the project with CMake"
@@ -295,7 +279,7 @@ If one doesn't exist, create a new one for this directory."
   "Run the target"
   (require 'ede-shell)
   (let* ((exe (target-binary (oref (ede-target-parent this) build-tool) this))
-	 (cmd (read-from-minibuffer "Run (like this): " exe)))
+         (cmd (read-from-minibuffer "Run (like this): " exe)))
     (ede-shell-run-something this cmd)))
 
 (defmethod project-debug-target ((this ede-cmake-cpp-project) target)
@@ -318,7 +302,7 @@ If one doesn't exist, create a new one for this directory."
 (defmethod ede-system-include-path ((this ede-cmake-cpp-target))
   "Get the system include path used by target THIS."
   (ede-system-include-path (oref this parent)))
-  
+
 (defmethod ede-preprocessor-map ((this ede-cmake-cpp-target))
   "Get the pre-processor map for project THIS."
   (ede-preprocessor-map  (oref this parent)))
@@ -353,9 +337,9 @@ This knows details about or source tree."
   (let ((ans (call-next-method)))
     (unless ans
       (let* ((lf (oref proj locate-fcn))
-	     (dir (file-name-directory (oref proj file))))
-	(when lf
-	    (setq ans (funcall lf name dir proj)))))
+             (dir (file-name-directory (oref proj file))))
+        (when lf
+          (setq ans (funcall lf name dir proj)))))
     (unless ans
       (if (ede-cpp-header-file-p proj name)
           ;; Else, use our little hack.
@@ -370,8 +354,7 @@ This knows details about or source tree."
                   (setq ans tmp))
               (setq ip (cdr ip)) ))
         ;; Else, do the usual.
-        (setq ans (call-next-method)))
-      )
+        (setq ans (call-next-method))))
     ;; TODO - does this call-next-method happen twice.  Is that bad??  Why is it here?
     (or ans (call-next-method))))
 
@@ -392,7 +375,7 @@ This knows details about or source tree."
 ;; (defun my-load-project (dir)
 ;;   "Load a project of type `ede-cmake-cpp-project' for the directory DIR.
 ;;      Return nil if there isn't one."
-;;   (ede-cmake-cpp-project 
+;;   (ede-cmake-cpp-project
 ;;    (file-name-nondirectory (directory-file-name dir))
 ;;    :directory dir
 ;;    :locate-build-directory 'my-project-root-build-locator

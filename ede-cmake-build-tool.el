@@ -11,22 +11,18 @@
     :initarg :additional-parameters
     :initform ""
     :type string
-    :documentation "Additional parameters to build tool")
-   )
-)
+    :documentation "Additional parameters to build tool")))
 
 (defclass cmake-makelike-build-tool (ede-cmake-build-tool)
-  ;; Base class for tools that work like make 
-  () )
+  ;; Base class for tools that work like make
+  ())
 
 (defclass cmake-make-build-tool (cmake-makelike-build-tool)
   ;; GNU Make and friends
   ((generator-string
     :type string
     :initarg :generator-string
-    :initform "Unix Makefiles")
-   )
-  )
+    :initform "Unix Makefiles")))
 
 (defclass cmake-ninja-build-tool (cmake-makelike-build-tool)
   ;; "Ninja is a small build system with a focus on speed"
@@ -34,13 +30,10 @@
   ((generator-string
     :type string
     :initarg :generator-string
-    :initform "Ninja")
-   )
-  )
+    :initform "Ninja")))
 
 (defclass cmake-visual-studio-build-tool (ede-cmake-build-tool)
-  ()
-  )
+  ())
 
 (defmethod get-target-directory ((this cmake-makelike-build-tool) project target)
   (let ((builddir (cmake-build-directory project))
@@ -74,7 +67,6 @@
   "Compiles FILE in BUILD-DIR in TARGET"
   (let* ((dir (target-build-dir this target))
          (doto (concat(file-name-sans-extension (file-name-nondirectory file)) ".o")))
-    (invoke-make this dir doto)
-    ))
+    (invoke-make this dir doto)))
 
 (provide 'ede-cmake-build-tool)
